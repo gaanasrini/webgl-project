@@ -1,4 +1,4 @@
-// Scene Setup
+// Scene setup
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -9,17 +9,16 @@ document.body.appendChild(renderer.domElement);
 const vertexShader = `
     varying vec2 vUv;
     varying float vWave;
-    
     uniform float u_time;
-    
+
     void main() {
         vUv = uv;
         vec3 pos = position;
+
+        float frequency = 2.0;
+        float amplitude = 0.5;
         
-        float freq = 4.0;
-        float amp = 0.3;
-        
-        vWave = sin(pos.x * freq + u_time) * amp;
+        vWave = sin(pos.x * frequency + u_time) * amplitude + sin(pos.y * frequency + u_time) * amplitude;
         pos.z += vWave;
         
         gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
@@ -31,7 +30,7 @@ const fragmentShader = `
     varying float vWave;
 
     void main() {
-        vec3 color = vec3(0.0, 0.5 + vWave, 1.0);
+        vec3 color = vec3(0.5 + vWave, 0.0, 1.0); // Purple tones
         gl_FragColor = vec4(color, 1.0);
     }
 `;
@@ -40,37 +39,37 @@ const uniforms = {
     u_time: { value: 0.0 }
 };
 
-// Create the wave mesh
-const geometry = new THREE.PlaneGeometry(5, 5, 100, 100);
+// Create wave grid
+const geometry = new THREE.PlaneGeometry(10, 10, 100, 100);
 const material = new THREE.ShaderMaterial({
     vertexShader,
     fragmentShader,
     uniforms,
-    wireframe: false
+    wireframe: true // Grid effect
 });
 
 const plane = new THREE.Mesh(geometry, material);
 plane.rotation.x = -Math.PI / 2;
 scene.add(plane);
-camera.position.set(0, 1.5, 3);
+camera.position.set(0, 3, 5);
 camera.lookAt(0, 0, 0);
 
-// Glowy Particle Effect
-const particles = new THREE.BufferGeometry();
-const count = 200;
-const positions = new Float32Array(count * 3);
-const colors = new Float32Array(count * 3);
+// Glowing Green Particles
+const particleCount = 200;
+const particleGeometry = new THREE.BufferGeometry();
+const positions = new Float32Array(particleCount * 3);
+const colors = new Float32Array(particleCount * 3);
 
-for (let i = 0; i < count; i++) {
-    let x = (Math.random() - 0.5) * 5;
-    let y = Math.random() * 2;
-    let z = (Math.random() - 0.5) * 5;
+for (let i = 0; i < particleCount; i++) {
+    let x = (Math.random() - 0.5) * 10;
+    let y = Math.random() * 1.5;
+    let z = (Math.random() - 0.5) * 10;
     positions.set([x, y, z], i * 3);
-    colors.set([1, 1, Math.random()], i * 3); 
+    colors.set([0, 1, 0], i * 3); // Glowy green
 }
 
-particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
 const particleMaterial = new THREE.PointsMaterial({
     size: 0.05,
@@ -80,46 +79,43 @@ const particleMaterial = new THREE.PointsMaterial({
     blending: THREE.AdditiveBlending
 });
 
-const particleSystem = new THREE.Points(particles, particleMaterial);
+const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
 scene.add(particleSystem);
 
-// Animation Loop
+// Video Recording Setup
+let capturer = new CCapture({ format: 'webm', framerate: 60 });
+let recording = false;
+
+// UI Button for Recording
+const recordButton = document.getElementById('recordButton');
+recordButton.addEventListener('click', () => {
+    if (!recording) {
+        capturer.start();
+        recordButton.textContent = '⏹ Stop Recording';
+        recording = true;
+    } else {
+        capturer.stop();
+        capturer.save();
+        recordButton.textContent = '🎥 Start Recording';
+        recording = false;
+    }
+});
+
+// Animation loop
 function animate() {
     requestAnimationFrame(animate);
     uniforms.u_time.value += 0.02;
-    particleSystem.rotation.y += 0.002; 
+    particleSystem.rotation.y += 0.001;
     renderer.render(scene, camera);
+    
+    if (recording) capturer.capture(renderer.domElement);
 }
 
 animate();
 
-// Video Capture
-const capturer = new CCapture({ format: 'webm', framerate: 60 });
-
-document.getElementById('recordButton').addEventListener('click', () => {
-    capturer.start();
-    console.log("Recording started...");
-
-    function captureFrame() {
-        capturer.capture(renderer.domElement);
-        if (capturer._capturing) {
-            requestAnimationFrame(captureFrame);
-        }
-    }
-    
-    captureFrame();
-    
-    setTimeout(() => {
-        capturer.stop();
-        capturer.save();
-        console.log("Recording finished!");
-    }, 5000); // Captures 5 seconds
-});
-
-// Responsive Resize
+// Responsive resize
 window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
 });
-
