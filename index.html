@@ -3,32 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebGL Grid Waves 🌊💜 + Recorder</title>
+    <title>Flowy Grid Animation</title>
     <style>
-        body { margin: 0; overflow: hidden; background: black; font-family: Arial, sans-serif; }
+        body { margin: 0; background: #0a0a16; overflow: hidden; }
         canvas { display: block; }
-        #recordButton {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            padding: 10px 15px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: 1px solid white;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        #recordButton:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
     </style>
 </head>
 <body>
-    <button id="recordButton">🎥 Start Recording</button>
-    
+    <canvas id="webgl-canvas"></canvas>
+
+    <!-- Include THREE.js & CCapture.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ccapture.js/1.1.0/CCapture.all.min.js"></script>
+
     <script src="script.js"></script>
 </body>
 </html>
-
